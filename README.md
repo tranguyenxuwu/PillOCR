@@ -1,3 +1,5 @@
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]([https://colab.research.google.com/drive/19cuWEjVVcCDWgsh-FG3zV4YGLvMdP4s1?usp=sharing])
+
 # Kiến trúc Hệ thống PillOCR — Tài liệu Mô tả Luồng (Flow)
 
 Hệ thống PillOCR được thiết kế để giải quyết bài toán: **Phát hiện các viên thuốc trong một bức ảnh và trích xuất nội dung chữ được in trên bề mặt của chúng**.
@@ -68,3 +70,54 @@ Các bức ảnh nhỏ đã được duỗi thẳng, xoay đúng chiều và câ
 - **Bỏ qua IoU, sử dụng Containment:** Do vùng chữ luôn nhỏ hơn viên thuốc rất nhiều, việc dùng chỉ số IoU truyền thống để xem vùng chữ có nằm trong viên thuốc không là không khả thi. Thiết kế sử dụng tỷ lệ Containment (diện tích giao / diện tích vùng chữ) phản ánh đúng bản chất vật lý của bài toán hơn.
 - **Cơ chế "Bầu chọn" (Majority Vote) để định hướng:** Thay vì dùng các quy tắc cứng nhắc (như chữ phải từ trái sang phải), việc thử nghiệm mọi góc xoay và chọn kết quả xuất hiện nhiều nhất giúp hệ thống cực kỳ bền bỉ trước các loại font chữ lạ hoặc cách in dọc, in ngược trên thuốc.
 - **Chấp nhận dự phòng trong tiền xử lý (Redundancy):** Việc bắt buộc chạy hai phương pháp cân bằng sáng song song cho thấy hệ thống ưu tiên độ chính xác cao nhất (accuracy) hơn là tối ưu hóa tốc độ xử lý phần cứng.
+
+---
+
+## Phần 4: Kết quả Huấn luyện YOLO OBB
+
+Mô hình YOLO OBB được huấn luyện để phát hiện hai loại đối tượng: `pill` và `text_zone`. Biểu đồ dưới đây tổng hợp toàn bộ quá trình huấn luyện.
+
+![YOLO OBB Training Results](assets/results.png)
+
+### Giải thích các Metrics
+
+| Metric         | Ý nghĩa                                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| **box_loss**   | Lỗi tọa độ hộp — đo độ chính xác vị trí và kích thước hộp mô hình dự đoán so với Ground Truth.                  |
+| **cls_loss**   | Lỗi phân loại — đo mức độ chính xác khi phân biệt `pill` và `text_zone`.                                        |
+| **dfl_loss**   | Distribution Focal Loss — giúp mô hình dự đoán biên hộp chính xác hơn bằng cách mô hình hóa phân phối xác suất. |
+| **angle_loss** | Lỗi góc xoay — riêng cho OBB, đo độ lệch góc của hộp nghiêng so với Ground Truth.                               |
+| **Precision**  | Tỷ lệ dự đoán đúng — trong tất cả hộp mô hình phát hiện, bao nhiêu phần trăm thực sự đúng.                      |
+| **Recall**     | Tỷ lệ phát hiện đúng — trong tất cả đối tượng thực tế, bao nhiêu phần trăm được mô hình tìm thấy.               |
+| **mAP50**      | Mean Average Precision tại IoU ≥ 0.5 — chỉ số đánh giá tổng hợp ở ngưỡng trùng lặp 50%.                         |
+| **mAP50-95**   | Mean Average Precision trung bình từ IoU 0.5 đến 0.95 — phép đo nghiêm ngặt nhất của COCO.                      |
+
+> **Nhận xét:** Cả 4 thành phần loss (train lẫn val) đều giảm ổn định và hội tụ. Precision/Recall đạt ~80%, mAP50 ~80% và mAP50-95 ~65%, cho thấy mô hình phát hiện viên thuốc và vùng chữ tốt ở nhiều mức IoU khác nhau.
+
+---
+
+## Phần 5: Kết quả Huấn luyện TrOCR
+
+Mô hình TrOCR được fine-tune trên tập dữ liệu tên thuốc tiếng Việt trong 40 epoch. Dưới đây là diễn biến quá trình huấn luyện.
+
+### Biểu đồ 1 — Training & Evaluation Loss
+
+![Training & Evaluation Loss](assets/loss_chart.png)
+
+Training loss giảm mạnh từ **10.39 → 0.001** trong 40 epoch, cho thấy mô hình hội tụ tốt. Eval loss ổn định quanh mức **0.13–0.17** từ epoch 15 trở đi, không có dấu hiệu overfit nghiêm trọng.
+
+### Biểu đồ 2 — OCR Accuracy Metrics
+
+![OCR Accuracy Metrics](assets/accuracy_chart.png)
+
+Các chỉ số đánh giá chất lượng OCR cải thiện liên tục qua quá trình huấn luyện, đạt kết quả tốt nhất tại epoch 38.
+
+### Giải thích các Metrics
+
+| Metric                         | Ý nghĩa                                                                                                      | Best      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------ | --------- |
+| **CER** (Character Error Rate) | Tỷ lệ lỗi ở **cấp ký tự** — số ký tự cần thêm/xóa/sửa chia cho tổng ký tự. CER thấp = đọc đúng từng ký tự.   | **4.86%** |
+| **WER** (Word Error Rate)      | Tỷ lệ lỗi ở **cấp từ** — số từ sai chia cho tổng số từ. WER luôn ≥ CER vì sai một ký tự cũng tính sai cả từ. | **8.56%** |
+| **Exact Match**                | Tỷ lệ mẫu mà mô hình đọc đúng **100% nội dung** — phép đo nghiêm ngặt nhất.                                  | **89.3%** |
+
+> **Nhận xét:** Với CER ~4.9% và Exact Match ~89%, mô hình TrOCR đọc đúng hoàn toàn gần 9/10 tên thuốc. Các lỗi còn lại chủ yếu đến từ chữ mờ, font đặc biệt, hoặc chữ in dọc trên viên thuốc.
