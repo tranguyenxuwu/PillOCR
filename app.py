@@ -12,8 +12,9 @@ from inference_utils import (
 )
 
 # Constants
-YOLO_MODELS_DIR = "/Volumes/ExternalSSD/Projects/PillOCR/app/models/YOLO"
-TROCR_LOCAL_PATH = "/Volumes/ExternalSSD/Projects/PillOCR/app/models/trocr_finetuned_best"
+APP_DIR = Path(__file__).resolve().parent
+YOLO_MODELS_DIR = str(APP_DIR / "models" / "YOLO")
+TROCR_LOCAL_PATH = str(APP_DIR / "models" / "trocr_finetuned_best")
 KAGGLE_MODEL_SLUG = "foxkawaii/vaipe-trocr/transformers/default"
 
 
