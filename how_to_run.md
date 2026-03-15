@@ -28,7 +28,7 @@ app/models/
 ```
 
 - **YOLO models** are auto-scanned from `app/models/YOLO/`. Each subfolder containing a `best.pt` becomes a selectable option in the UI.
-- **TrOCR model** must be at `app/models/trocr_finetuned_best/`.
+- **TrOCR model** — if `app/models/trocr_finetuned_best/` exists locally, it's used. Otherwise, the model is **auto-downloaded from Kaggle** (`foxkawaii/vaipe-trocr/transformers/default`) on first run.
 
 ## 4. Run the App
 

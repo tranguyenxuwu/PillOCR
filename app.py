@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import time
 import torch
+import kagglehub
 from ultralytics import YOLO
 from inference_utils import (
     predict_pill_ocr, load_trocr_model, predict_cropped_pill_ocr, is_obb_model,
@@ -12,7 +13,15 @@ from inference_utils import (
 
 # Constants
 YOLO_MODELS_DIR = "/Volumes/ExternalSSD/Projects/PillOCR/app/models/YOLO"
-TROCR_MODEL_PATH = "/Volumes/ExternalSSD/Projects/PillOCR/app/models/trocr_finetuned_best"
+TROCR_LOCAL_PATH = "/Volumes/ExternalSSD/Projects/PillOCR/app/models/trocr_finetuned_best"
+KAGGLE_MODEL_SLUG = "foxkawaii/vaipe-trocr/transformers/default"
+
+
+def resolve_trocr_path():
+    """Use local model if available, otherwise download from Kaggle."""
+    if os.path.isdir(TROCR_LOCAL_PATH):
+        return TROCR_LOCAL_PATH
+    return kagglehub.model_download(KAGGLE_MODEL_SLUG)
 
 st.set_page_config(layout="wide")
 
@@ -76,7 +85,8 @@ def load_yolo_model(model_path):
 @st.cache_resource
 def get_trocr_model():
     device = get_device()
-    processor, model = load_trocr_model(TROCR_MODEL_PATH, device)
+    trocr_path = resolve_trocr_path()
+    processor, model = load_trocr_model(trocr_path, device)
     return processor, model, device
 
 
