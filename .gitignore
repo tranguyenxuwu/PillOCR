@@ -1,3 +1,4 @@
 __pycache__
 outputs
 .DS_Store
+models/trocr_finetuned_best/
