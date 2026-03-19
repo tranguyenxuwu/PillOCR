@@ -115,14 +115,13 @@ with st.sidebar:
     st.header("⚙️ Detection Settings")
     input_type = st.radio("Input Type", ["Full Image (Detect Pills)", "Pre-cropped Pill (OCR Only)"])
     if input_type == "Full Image (Detect Pills)":
-        conf = st.slider("Confidence threshold", min_value=0.0, max_value=1.0, value=0.5, step=0.1)
-        iou = st.slider("IoU threshold (NMS)", min_value=0.0, max_value=1.0, value=0.45, step=0.05)
+        conf = st.slider("Confidence threshold", min_value=0.0, max_value=1.0, value=0.30, step=0.1)
 
     st.divider()
     st.header("🔄 Crop Transform")
     auto_orient = st.checkbox(
         "🔍 Auto-orient (brute-force)",
-        value=False,
+        value=True,
         help="Try all 12 rotation+flip combos and pick the one whose OCR matches a known pill text. Slower but automatic."
     )
     if not auto_orient:
@@ -180,7 +179,7 @@ if st.button("Run OCR Pipeline") and uploaded_file is not None:
                 source_path=input_path,
                 trocr_device=trocr_device,
                 conf=conf,
-                iou_threshold=iou,
+                iou_threshold=0.45,
                 crop_rotation=crop_rotation,
                 crop_flip=crop_flip,
                 auto_orient=auto_orient
